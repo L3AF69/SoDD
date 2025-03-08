@@ -4,7 +4,6 @@ import os
 from random import randint
 from time import time, sleep
 from getpass import getpass as hinput
-from pystyle import Colors
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
