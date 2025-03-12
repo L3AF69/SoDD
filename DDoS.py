@@ -64,6 +64,9 @@ def get_input(prompt, default=None, cast_type=int):
         print(f"Invalid input. Please enter a valid {cast_type.__name__}.")
         return get_input(prompt, default, cast_type)
 
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
 def main():
     clear_screen()
     ip = input(f"Enter the target IP address: ")
