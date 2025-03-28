@@ -4,7 +4,6 @@ from threading import Thread
 import os
 from random import randint
 from time import time, sleep
-import msvcrt  # Per la pausa su Windows
 import colorama
 from colorama import Fore, Style
 
